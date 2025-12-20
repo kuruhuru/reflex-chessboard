@@ -19,7 +19,17 @@ classifiers = ["Development Status :: 4 - Beta"]
 [project.urls]
 
 [project.optional-dependencies]
-dev = ["build", "twine"]
+dev = ["build", "twine", "pytest"]
 
 [tool.setuptools.packages.find]
 where = ["custom_components"]
+
+[tool.setuptools.package-data]
+# Ship the local React shim with the Python package so rx.asset(..., shared=True)
+# can always find it next to `custom_components/reflex_chessboard/chessboard.py`.
+reflex_chessboard = ["*.jsx"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

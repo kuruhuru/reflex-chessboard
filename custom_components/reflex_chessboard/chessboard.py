@@ -1,58 +1,195 @@
-
-"""Reflex custom component Chessboard."""
-
-# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/
-
+from __future__ import annotations
+from typing import Annotated, Any, Dict, Optional
 import reflex as rx
-
-# Some libraries you want to wrap may require dynamic imports.
-# This is because they they may not be compatible with Server-Side Rendering (SSR).
-# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
-# For example:
-# from reflex.components.component import NoSSRComponent
-# class Chessboard(NoSSRComponent):
-#     pass
+from reflex.utils.imports import ImportVar
 
 
 class Chessboard(rx.Component):
-    """Chessboard component."""
+    # NOTE: We intentionally do NOT import a local `.jsx` file from `/public` or `/assets`.
+    # Vite forbids module imports from `/public` (see error: "Cannot import non-asset file ... inside /public").
+    # Instead, we inject the shim's JS into the page module and load npm deps only on the client via ClientSide().
+    tag = "ReflexChessboardShim"
 
-    # The React library to wrap.
-    library = "Fill-Me"
+    lib_dependencies = ["react-chessboard@5.8.6", "chess.js@1.4.0"]
 
-    # The React component tag.
-    tag = "Fill-Me"
+    # Props (Python -> React).
+    fen: str = "start"
+    options: Optional[Dict[str, Any]] = None
 
-    # If the tag is the default export from the module, you must set is_default = True.
-    # This is normally used when components don't have curly braces around them when importing.
-    # is_default = True
+    # Events (React -> Python). Reflex will expose this to JS as `onMove`.
+    # Provide an ArgsSpec so handlers can accept a payload dict, e.g. `def on_move(self, payload: dict): ...`
+    on_move: Annotated[rx.EventHandler, lambda payload: [payload]]
 
-    # If you are wrapping another components with the same tag as a component in your project
-    # you can use aliases to differentiate between them and avoid naming conflicts.
-    # alias = "OtherChessboard"
+    def add_imports(self):
+        # Imports required for injected shim code.
+        return {
+            "react": [
+                ImportVar(tag="useEffect"),
+                ImportVar(tag="useId"),
+                ImportVar(tag="useMemo"),
+                ImportVar(tag="useRef"),
+                ImportVar(tag="useState"),
+            ],
+            "$/utils/context": [ImportVar(tag="ClientSide")],
+            "@emotion/react": [ImportVar(tag="jsx")],
+        }
 
-    # The props of the React component.
-    # Note: when Reflex compiles the component to Javascript,
-    # `snake_case` property names are automatically formatted as `camelCase`.
-    # The prop names may be defined in `camelCase` as well.
-    # some_prop: rx.Var[str] = "some default value"
-    # some_other_prop: rx.Var[int] = 1
+    def _get_custom_code(self) -> str:
+        # Inject a client-only loader that dynamically imports heavy deps (react-chessboard + chess.js)
+        # and returns the actual shim component. This avoids SSR issues and avoids importing from /public.
+        #
+        # IMPORTANT: the symbol name MUST match `tag` so the compiled page can render it.
+        return r"""
+const ReflexChessboardShim = ClientSide(async () => {
+  const [reactChessboardMod, chessJsMod] = await Promise.all([
+    import("react-chessboard"),
+    import("chess.js"),
+  ]);
 
-    # By default Reflex will install the library you have specified in the library property.
-    # However, sometimes you may need to install other libraries to use a component.
-    # In this case you can use the lib_dependencies property to specify other libraries to install.
-    # lib_dependencies: list[str] = []
+  // Handle both ESM/CJS export shapes.
+  const ChessboardComp = reactChessboardMod?.Chessboard ?? reactChessboardMod?.default ?? reactChessboardMod;
+  const ChessCtor =
+    chessJsMod?.Chess ??
+    chessJsMod?.default?.Chess ??
+    chessJsMod?.default ??
+    chessJsMod;
 
-    # Event triggers declaration if any.
-    # Below is equivalent to merging `{ "on_change": lambda e: [e] }`
-    # onto the default event triggers of parent/base Component.
-    # The function defined for the `on_change` trigger maps event for the javascript
-    # trigger to what will be passed to the backend event handler function.
-    # on_change: rx.EventHandler[lambda e: [e]]
+  return function ReflexChessboardShimInner(props) {
+    const { fen, options, onMove } = props;
 
-    # To add custom code to your component
-    # def _get_custom_code(self) -> str:
-    #     return "const customCode = 'customCode';"
+    const reactId = useId();
+    const debug = (options && options.debug) ? true : false;
+    const chessRef = useRef(null);
+    const startFenRef = useRef(null);
+    const [localFen, setLocalFen] = useState(fen || "start");
+
+    // Initialize chess.js once.
+    if (!chessRef.current) {
+      chessRef.current = new ChessCtor();
+      try {
+        startFenRef.current = chessRef.current.fen();
+      } catch (_e) {
+        startFenRef.current = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+      }
+      if (fen && fen !== "start") {
+        try {
+          chessRef.current.load(fen);
+        } catch {
+          chessRef.current.reset();
+        }
+      }
+    }
+
+    // Sync server fen -> local state.
+    useEffect(() => {
+      if (!fen) return;
+      // Normalize incoming "start" -> start FEN to keep react-chessboard happy.
+      const normalized = (fen === "start") ? (startFenRef.current || "start") : fen;
+      if (normalized === localFen) return;
+      try {
+        if (fen === "start") chessRef.current.reset();
+        else chessRef.current.load(fen);
+        setLocalFen(normalized);
+      } catch {
+        // ignore invalid fen
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fen]);
+
+    useEffect(() => {
+      if (debug) {
+        console.error("[reflex-chessboard] shim mounted", { fen, localFen });
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    function inferPromotion(sourceSquare, targetSquare) {
+      try {
+        const moving = chessRef.current?.get?.(sourceSquare);
+        const isPawn = moving?.type === "p";
+        if (!isPawn) return undefined;
+        const rank = targetSquare?.[1];
+        if (rank === "8" || rank === "1") return "q";
+      } catch (_e) {
+        // ignore
+      }
+      return undefined;
+    }
+
+    // react-chessboard v5.x uses an Options API:
+    // options.onPieceDrop({ piece, sourceSquare, targetSquare }) => boolean
+    function onPieceDrop(args) {
+      const sourceSquare = args?.sourceSquare;
+      const targetSquare = args?.targetSquare;
+      const piece = args?.piece;
+      if (debug) {
+        console.error("[reflex-chessboard] onPieceDrop", { sourceSquare, targetSquare, piece, localFen });
+        try { document.title = `[drop] ${sourceSquare}->${targetSquare}`; } catch (_e) {}
+      }
+      if (!sourceSquare || !targetSquare) return false;
+
+      const promotion = inferPromotion(sourceSquare, targetSquare);
+      let result = null;
+      try {
+        result = chessRef.current.move({
+          from: sourceSquare,
+          to: targetSquare,
+          promotion,
+        });
+      } catch (e) {
+        console.error("[reflex-chessboard] chess.js move error", e, {
+          sourceSquare,
+          targetSquare,
+          piece,
+          promotion,
+          fen: chessRef.current?.fen?.(),
+        });
+        return false;
+      }
+
+      if (!result) {
+        console.warn("[reflex-chessboard] illegal move rejected", {
+          sourceSquare,
+          targetSquare,
+          piece,
+          promotion,
+          fen: chessRef.current?.fen?.(),
+        });
+        return false;
+      }
+
+      const newFen = chessRef.current.fen();
+      setLocalFen(newFen);
+
+      if (onMove) {
+        onMove({
+          from: sourceSquare,
+          to: targetSquare,
+          piece: piece?.pieceType ?? null,
+          promotion: promotion ?? null,
+          fen: newFen,
+          san: result.san ?? null,
+        });
+      }
+
+      return true;
+    }
+
+    const mergedOptions = useMemo(() => {
+      const id = (options && options.id) ? options.id : `reflex-chessboard-${reactId}`;
+      return {
+        ...(options || {}),
+        id,
+        // react-chessboard expects a FEN string or position object; avoid "start" sentinel.
+        position: (localFen === "start") ? (startFenRef.current || localFen) : localFen,
+        onPieceDrop: onPieceDrop,
+      };
+    }, [options, localFen, reactId]);
+
+    return jsx(ChessboardComp, { options: mergedOptions });
+  };
+});
+"""
 
 
 chessboard = Chessboard.create
