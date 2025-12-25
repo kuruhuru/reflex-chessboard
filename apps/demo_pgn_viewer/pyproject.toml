@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "demo-pgn-viewer"
+version = "0.0.0"
+description = "Demo app for reflex chess monorepo"
+requires-python = ">=3.10"
+dependencies = [
+  "reflex>=0.8.23",
+  "reflex-chessboard",
+  "reflex-chess-model",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+

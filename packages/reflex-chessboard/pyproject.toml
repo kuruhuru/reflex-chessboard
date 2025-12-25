@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflex-chessboard"
+version = "0.1.4"
+description = "Шахматная доска для Reflex (react-chessboard + chess.js)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "kuruhuru" }]
+keywords = ["reflex", "reflex-custom-components"]
+
+dependencies = ["reflex>=0.8.23"]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/kuruhuru/reflex-chessboard"
+Repository = "https://github.com/kuruhuru/reflex-chessboard"
+Issues = "https://github.com/kuruhuru/reflex-chessboard/issues"
+
+[project.optional-dependencies]
+dev = ["build", "twine", "pytest", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["custom_components"]
+
+[tool.setuptools.package-data]
+reflex_chessboard = ["py.typed", "pieces/**/*.svg"]
+
+[dependency-groups]
+dev = ["pytest>=9.0.2", "ruff>=0.14.10", "build>=1.3.0", "twine>=6.2.0"]

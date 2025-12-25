@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflex-chess-model"
+version = "0.1.0"
+description = "Shared game model (PackedGameTree) for Reflex chess packages"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "kuruhuru" }]
+keywords = ["reflex", "chess", "pgn", "model"]
+dependencies = ["typing-extensions>=4.12.0"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+reflex_chess_model = ["py.typed"]
+
+

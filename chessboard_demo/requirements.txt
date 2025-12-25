@@ -1,5 +1,0 @@
-
-reflex==0.8.23
-
-# Install the local package from the repo root when using `pip -r`.
--e ..

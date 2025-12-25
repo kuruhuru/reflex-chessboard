@@ -7,6 +7,6 @@ ignore = [
 
 [lint.per-file-ignores]
 # Demo is intentionally simple and uses runtime-only deps.
-"chessboard_demo/**" = ["F401"]
+"apps/demo_pgn_viewer/**" = ["F401"]
 
 

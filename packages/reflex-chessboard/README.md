@@ -1,24 +1,3 @@
-# Chess Reflex Monorepo
-
-Монорепо с набором независимо публикуемых пакетов (PyPI) для шахматных UI-компонентов на **Reflex**.
-
-## Пакеты
-
-- `packages/reflex-chessboard` → PyPI: `reflex-chessboard`, import: `reflex_chessboard`
-- `packages/reflex-chess-model` → PyPI: `reflex-chess-model`, import: `reflex_chess_model`
-- (дальше по плану) `reflex-chess-notation`, `reflex-chess-viewer`, `reflex-chess-trainer`
-
-## Демо
-
-- `apps/demo_pgn_viewer`
-
-Запуск:
-
-```bash
-cd apps/demo_pgn_viewer
-uv run reflex run
-```
-
 # reflex-chessboard
 
 Шахматная доска для **Reflex** на базе **react-chessboard** + **chess.js**.
@@ -88,7 +67,7 @@ app.add_page(index, route="/")
 Запуск:
 
 ```bash
-cd chessboard_demo
+cd apps/demo_pgn_viewer
 uv run reflex run
 ```
 
