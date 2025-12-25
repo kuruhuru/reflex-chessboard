@@ -20,3 +20,25 @@ def test_package_imports_and_component_contract():
     assert "const ReflexChessboardShim = ClientSide" in (inst._get_custom_code() or "")
 
 
+def test_component_exposes_optional_events():
+    os.environ["REFLEX_BACKEND_ONLY"] = "1"
+
+    from reflex_chessboard import Chessboard
+
+    # Just ensure the API surface is present; handlers are wired at runtime by Reflex.
+    assert hasattr(Chessboard, "on_arrows_change")
+    assert hasattr(Chessboard, "on_resize")
+
+
+def test_builtin_piece_sets_api():
+    os.environ["REFLEX_BACKEND_ONLY"] = "1"
+
+    from reflex_chessboard import builtin_pieces_base_url, list_builtin_piece_sets
+
+    assert builtin_pieces_base_url().startswith("/external/")
+    sets = list_builtin_piece_sets()
+    # We ship at least these popular sets.
+    for expected in ("merida", "cburnett", "maestro", "pirouetti"):
+        assert expected in sets
+
+

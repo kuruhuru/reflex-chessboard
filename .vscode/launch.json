@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Reflex: demo (chessboard_demo)",
+      "type": "python",
+      "request": "launch",
+      "module": "reflex",
+      "args": [
+        "run"
+      ],
+      "cwd": "${workspaceFolder}/chessboard_demo",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "subProcess": true
+    },
+    {
+      "name": "Reflex: demo (attach, debugpy 5678)",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "127.0.0.1",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "${workspaceFolder}"
+        }
+      ],
+      "justMyCode": false
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+recursive-include custom_components/reflex_chessboard py.typed
+recursive-include custom_components/reflex_chessboard/pieces *.svg
+

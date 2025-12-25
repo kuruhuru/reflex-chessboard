@@ -1,0 +1,12 @@
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+  # We embed a sizeable JS shim as a Python raw string; enforcing 88-char lines there is noise.
+  "E501",
+]
+
+[lint.per-file-ignores]
+# Demo is intentionally simple and uses runtime-only deps.
+"chessboard_demo/**" = ["F401"]
+
+
