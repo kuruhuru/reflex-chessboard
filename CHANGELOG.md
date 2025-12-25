@@ -35,6 +35,20 @@
 
 ## [0.1.2] - 2025-12-25
 
+### Added
+- Встроенные SVG-наборы фигур в пакете: `merida`, `cburnett`, `maestro`, `pirouetti`.
+- API для встроенных ассетов: `list_builtin_piece_sets()`, `builtin_pieces_base_url()`, `register_builtin_piece_assets()`, `builtin_piece_options()`.
+
+### Changed
+- Если выбран `pieceSet="assets/<name>"` и `piecesBaseUrl` не задан, по умолчанию используется `"/external/reflex_chessboard/pieces"`.
+
+### Fixed
+- `register_builtin_piece_assets()` теперь:
+  - создаёт директорию назначения `assets/external/reflex_chessboard/pieces` при необходимости
+  - выдаёт более понятные ошибки (например при отсутствии SVG в установленном пакете)
+
+## [0.1.2] - 2025-12-25
+
 ### Fixed
 - Добавлены в пакет ассеты фигур. Добавлен CI для github
 

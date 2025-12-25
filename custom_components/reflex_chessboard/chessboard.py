@@ -398,8 +398,10 @@ const ReflexChessboardShim = ClientSide(async () => {
       const id = (options && options.id) ? options.id : `reflex-chessboard-${reactId}`;
       const boardTheme = options?.boardTheme ?? "default";
       const pieceSetRaw = options?.pieceSet ?? "merida";
-      const piecesBaseUrl = options?.piecesBaseUrl ?? "/pieces";
       const isAssetPieceSet = typeof pieceSetRaw === "string" && pieceSetRaw.startsWith("assets/");
+      // If user selects `assets/<name>` but doesn't specify base URL, prefer built-in package assets.
+      // Note: requires calling `register_builtin_piece_assets()` at app compile/import time.
+      const piecesBaseUrl = options?.piecesBaseUrl ?? (isAssetPieceSet ? "/external/reflex_chessboard/pieces" : "/pieces");
       const pieceSet = isAssetPieceSet ? pieceSetRaw.slice("assets/".length) : pieceSetRaw;
       let boardSize = options?.boardSize; // number(px) or string (e.g. "420px")
       const responsive = !!options?.responsive;

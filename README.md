@@ -19,6 +19,7 @@ pip install reflex-chessboard
 ```python
 import reflex as rx
 from reflex_chessboard import (
+    builtin_piece_options,
     builtin_pieces_base_url,
     chessboard,
     list_builtin_piece_sets,
@@ -50,8 +51,7 @@ def index():
                 "enableClickToMove": True,
                 "showNotation": True,
                 # Пример: используем встроенный набор "merida" из пакета:
-                "pieceSet": "assets/merida",
-                "piecesBaseUrl": builtin_pieces_base_url(),
+                **builtin_piece_options("merida"),
             },
             on_move=State.on_move,
         ),
@@ -111,9 +111,25 @@ uv run reflex run
 
 Пакет включает несколько популярных наборов: `merida`, `cburnett`, `maestro`, `pirouetti`.
 
+### Как использовать в чужом проекте
+
+1) Зарегистрируйте ассеты (один раз при импорте/компиляции приложения — рекомендуемое место: `rxconfig.py`):
+
+```python
+from reflex_chessboard import register_builtin_piece_assets
+
+register_builtin_piece_assets()
+```
+
+2) В `options`:
+
+- `pieceSet = "assets/merida"` (или другой из `list_builtin_piece_sets()`)
+- `piecesBaseUrl = builtin_pieces_base_url()` (обычно ставится автоматически, если не указать)
+
 API:
 - **`list_builtin_piece_sets() -> list[str]`**: список доступных наборов
 - **`builtin_pieces_base_url() -> str`**: base URL (обычно `"/external/reflex_chessboard/pieces"`)
+- **`builtin_piece_options(set_name: str) -> dict[str, str]`**: готовый фрагмент `options` для встроенного набора
 - **`register_builtin_piece_assets(sets: Iterable[str] | None = None)`**: зарегистрировать наборы как shared assets
 
 ## Options: полезные ключи `react-chessboard` (pass-through)
